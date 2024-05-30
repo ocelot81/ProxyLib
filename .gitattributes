@@ -1,1 +1,2 @@
-*.es linguist-language=lua
+*.lua text=auto
+*.lua eol=lf
