@@ -54,8 +54,8 @@ function ProxyLib.IsWrapped(Obj : Instance)
 	local Meta = ProxyLib.RetrieveMetatable(Obj);
 	
 	if not Meta then
-		return Obj
-	end
+		return false;
+	end;
 
 	return Obj.__wrapped
 end
