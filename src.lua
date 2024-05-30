@@ -7,8 +7,8 @@ local Signal = require(ReplicatedStorage.Signal)
 local ProxyLib = {};
 
 type Proxy = {
-	__indexEvent : typeof(Signal) & {OnIndex : (Index : string, Func : () -> ()) -> typeof(Signal)};
-	__newindexEvent : typeof(Signal) & {OnIndex : (Index : string, Func : () -> ()) -> typeof(Signal)};
+	__indexEvent : typeof(Signal) & {OnIndex : (Index : string, Func : () -> ()) -> ()};
+	__newindexEvent : typeof(Signal) & {OnIndex : (Index : string, Func : () -> ()) -> ()};
 };
 
 type WrappedObj = {UnWrap : () -> Instance} & Proxy & Instance;
