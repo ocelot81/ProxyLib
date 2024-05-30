@@ -7,8 +7,8 @@ local Signal = require(ReplicatedStorage.Signal)
 local ProxyLib = {};
 
 type Proxy = {
-	__indexEvent : typeof(Signal) & {OnIndex : (Index : string, Func : () -> ()) -> ()};
-	__newindexEvent : typeof(Signal) & {OnIndex : (Index : string, Func : () -> ()) -> ()};
+	__indexEvent : typeof(Signal) & {OnIndex : (Index : string) -> typeof(Signal)};
+	__newindexEvent : typeof(Signal) & {OnIndex : (Index : string) -> typeof(Signal)};
 };
 
 type WrappedObj = {UnWrap : () -> Instance} & Proxy & Instance;
@@ -16,37 +16,30 @@ type WrappedObj = {UnWrap : () -> Instance} & Proxy & Instance;
 --// Wrapping
 
 function ProxyLib.Wrap(Obj : Instance, Props : {[any] : any}) : WrappedObj
-
 	local Interface = {};
 
-	for i,v in Props do
+	for i,v in Props or {} do
 		Interface[i] = v
 	end
-
 	function Interface:UnWrap()
 		return Obj
 	end
-
 	function Interface:SetInterfaceIndex(Index, Property)
 		Interface[Index] = Property
 	end
-
-	return ProxyLib.NewProxy({
+	return ProxyLib.Proxify({},{
 		__index = function(_, Index)
 			if Interface[Index] then
-				return Interface[Index]
-			end
-			return Obj
-		end;
-
-		__newindex = function(_, Index, Prop)
-			Obj[Index] = Prop
-		end;
-
-		__type = "WrappedObj"; 
-		__wrapped = true; 
+				return Interface[Index];
+			end;
+			return Obj;
+		end,
+		__newindex = function(_, Index, Val)
+			Obj[Index] = Val;
+		end,
+		__wrapped = true;
+		__type = "WrappedObj"
 	})
-
 end
 
 function ProxyLib.UnWrap(Obj : Instance)
@@ -57,7 +50,6 @@ end
 --// Proxy
 
 function ProxyLib.NewProxy(Props : {[any] : any}, HookMeta : boolean?) : Proxy
-
 	if HookMeta == nil then
 		HookMeta = true;
 	end;
@@ -70,58 +62,84 @@ function ProxyLib.NewProxy(Props : {[any] : any}, HookMeta : boolean?) : Proxy
 
 	local Meta = getmetatable(ProxyBase);
 
-	local NewIndexConnection = Signal.New();
-	local IndexConnection = Signal.New();
-
 	Props = Props or {};
 
 	for i,v in Props do
 		Meta[i] = v;
 	end;
 
-	Props.__newindex = Props.__newindex or function(self, index, val) rawset(self, index, val) end;
-
-	Meta.__index = function(self, index)
-		IndexConnection:Fire(index);
-		if Props.__index and typeof(Props.__index) == "function" then
-			return Props.__index(self, index);
-		end;
-		return Props.__index
-	end
-
-	Meta.__newindex = function(self, index, val)
-		NewIndexConnection:Fire(index);
-		if Props.__newindex and typeof(Props.__newindex) == "function" then
-			return Props.__newindex(self, index, val);
-		end;
-		return Props.__newindex
-	end
-
-	local Closure = setmetatable(
-		{__indexEvent = setmetatable({OnIndex = function(Expected, Listener) 
-			IndexConnection:Connect(function(Recieved) 
-				if Expected == Recieved then 
-					Listener(Recieved);
-				end;
-			end);
-		end},{__index = IndexConnection}), __newindexEvent = setmetatable({OnIndex = function(Expected, Listener)
-			NewIndexConnection:Connect(function(Recieved) 
-				if Expected == Recieved then 
-					Listener(Recieved);
-				end;
-			end);
-		end},
-		{__index = NewIndexConnection})}, Meta);		
-
-	return Closure;
+	return ProxyBase
 end
 
-function ProxyLib.Proxify(Tab : {[any] : any}) : Proxy
-	local Proxy = ProxyLib.NewProxy();
-	for i,v in Tab do	
-		rawset(Proxy, i, v);
-	end;
-	return Proxy;
+
+function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Proxy
+	
+	Metadata = Metadata or {};
+	
+	local NewIndexConnection = Signal.New();
+	local IndexConnection = Signal.New();
+	
+	local Closure = {
+		__indexEvent = setmetatable({OnIndex = function(Expected) 
+			local OnNewIndexSignal = Signal.New();
+			IndexConnection:Connect(function(Recieved) 
+				if Expected == Recieved then 
+					OnNewIndexSignal:Fire(Recieved)
+				end;
+			end);
+			return OnNewIndexSignal
+		end},{__index = IndexConnection}), __newindexEvent = setmetatable({OnIndex = function(Expected)
+			local OnIndexSignal = Signal.New();
+			NewIndexConnection:Connect(function(Recieved) 
+				if Expected == Recieved then 
+					OnIndexSignal:Fire(Recieved)
+				end;
+			end);
+			return OnIndexSignal
+		end},
+	{__index = NewIndexConnection})}
+	
+	
+	return ProxyLib.NewProxy({
+		__index = function(_, Index)
+			if Closure[Index] then
+				return Closure[Index]
+			end
+			IndexConnection:Fire(Index);
+			
+			if Metadata.__index then
+				if typeof(Metadata.__index) == "function" then
+					return Metadata:__index(Index)
+				end
+				return Metadata.__index
+			end
+			return Tab[Index];
+		end,
+		__newindex = function(_, Index, Val)
+			Tab[Index] = Val;
+			NewIndexConnection:Fire(Index);
+			
+			if Metadata.__newindex then
+				if typeof(Metadata.__newindex) == "function" then
+					return Metadata:__newindex(Index, Val)
+				end
+				return Metadata.__newindex
+			end
+		end,
+	});
+end
+
+
+--// Support Functions
+
+function ProxyLib.Typeof(Tab : {[any] : any}) : any
+	return ProxyLib.MetaIndexSearch(Tab, "__type");
+end
+
+function ProxyLib.ProxyFunc(func : () -> ()) : Proxy
+	return ProxyLib.NewProxy({
+		__call = func;
+	});
 end
 
 --// Metamethods
@@ -180,16 +198,6 @@ function ProxyLib.MetaIndexSearch(Tab : {[any] : any}, Index : any) : any
 	return nil;
 end
 
---// Support Functions
 
-function ProxyLib.Typeof(Tab : {[any] : any}) : any
-	return ProxyLib.MetaIndexSearch(Tab, "__type");
-end
-
-function ProxyLib.ProxyFunc(func : () -> ()) : Proxy
-	return ProxyLib.NewProxy({
-		__call = func;
-	});
-end
 
 return ProxyLib;
