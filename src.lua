@@ -13,6 +13,8 @@ type Proxy = {
 
 type WrappedObj = {UnWrap : () -> Instance} & Proxy & Instance;
 
+--// Wrapping
+
 function ProxyLib.Wrap(Obj : Instance, Props : {[any] : any}) : WrappedObj
 
 	local Interface = {};
@@ -23,6 +25,10 @@ function ProxyLib.Wrap(Obj : Instance, Props : {[any] : any}) : WrappedObj
 
 	function Interface:UnWrap()
 		return Obj
+	end
+
+	function Interface:SetInterfaceIndex(Index, Property)
+		Interface[Index] = Property
 	end
 
 	return ProxyLib.NewProxy({
@@ -48,6 +54,7 @@ function ProxyLib.UnWrap(Obj : Instance)
 	return Obj:UnWrap();
 end
 
+--// Proxy
 
 function ProxyLib.NewProxy(Props : {[any] : any}, HookMeta : boolean?) : Proxy
 
@@ -104,7 +111,7 @@ function ProxyLib.NewProxy(Props : {[any] : any}, HookMeta : boolean?) : Proxy
 				end;
 			end);
 		end},
-	{__index = NewIndexConnection})}, Meta);		
+		{__index = NewIndexConnection})}, Meta);		
 
 	return Closure;
 end
@@ -139,13 +146,21 @@ function ProxyLib.MetamethodHookFunc(Tab : {[any] : any}, Specified : {string}, 
 end
 
 function ProxyLib.RecursiveMetaDetector(Tab : {[any] : any}) : boolean
-	for _,Value in Tab do 
-		if typeof(Value) ~= "userdata" or typeof(Value) ~= "table" then continue end
-		if getmetatable(Value) or ProxyLib.RecursiveMetaSearch(Value) then
-			return true;
-		end;
+	
+	local Meta = getmetatable(Tab);
+	
+	if not Meta or typeof(Meta) == "string" then
+		return;
 	end;
-	return false;
+
+	for _,v in Meta do
+		if typeof(v) ~= "userdata" and typeof(v) ~= "table" then continue end
+		if getmetatable(v) or ProxyLib.RecursiveMetaDetector(v) then
+			return true
+		end			
+	end
+
+	return false
 end
 
 function ProxyLib.MetaIndexSearch(Tab : {[any] : any}, Index : any) : any
@@ -178,4 +193,3 @@ function ProxyLib.ProxyFunc(func : () -> ()) : Proxy
 end
 
 return ProxyLib;
-
