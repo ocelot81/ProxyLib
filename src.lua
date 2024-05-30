@@ -43,7 +43,7 @@ function ProxyLib.Wrap(Obj : Instance, Props : {[any] : any}) : WrappedObj
 end
 
 function ProxyLib.UnWrap(Obj : Instance)
-	if not ProxyLib.Typeof(Obj, "__wrapped") then return Obj end;
+	if not ProxyLib.MetaIndexSearch(Obj, "__wrapped") then return Obj end;
 	return Obj:UnWrap();
 end
 
@@ -168,7 +168,7 @@ function ProxyLib.RecursiveMetaDetector(Tab : {[any] : any}) : boolean
 	local Meta = getmetatable(Tab);
 	
 	if not Meta or typeof(Meta) == "string" then
-		return;
+		return nil;
 	end;
 
 	for _,v in Meta do
@@ -186,7 +186,7 @@ function ProxyLib.MetaIndexSearch(Tab : {[any] : any}, Index : any) : any
 	local Meta = getmetatable(Tab) or getmetatable(setmetatable(Tab, {}));
 
 	if typeof(Meta) == "string" then
-		return;
+		return nil;
 	end;
 
 	for MetaIndex, Value in Meta do
