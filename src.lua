@@ -109,7 +109,7 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Pr
 			end);
 			return OnIndexSignal;
 		end},
-		{__index = NewIndexConnection})};
+	{__index = NewIndexConnection})};
 
 
 	return ProxyLib.NewProxy({
@@ -155,10 +155,10 @@ function ProxyLib.Typeof(Tab : {[any] : any}) : any
 	end;
 	
 	if ProxyLib.RetrieveMetatable(Tab) then
-		return Tab.__type
-	end
+		return Tab.__type;
+	end;
 	
-	return typeof(Tab)
+	return typeof(Tab);
 end
 
 function ProxyLib.ProxyFunc(func : () -> ()) : Proxy
