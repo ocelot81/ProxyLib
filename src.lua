@@ -7,11 +7,11 @@ local Signal = require(ReplicatedStorage.Signal)
 local ProxyLib = {};
 
 type Proxy = {
-	__indexEvent : typeof(Signal);
-	__newindexEvent : typeof(Signal);	
+	__indexEvent : typeof(Signal) & {OnIndex : (Index : string, Func : () -> ()) -> typeof(Signal)};
+	__newindexEvent : typeof(Signal) & {OnIndex : (Index : string, Func : () -> ()) -> typeof(Signal)};
 };
 
-type WrappedObj = {UnWrap : () -> Instance;} & Proxy & Instance;
+type WrappedObj = {UnWrap : () -> Instance} & Proxy & Instance;
 
 function ProxyLib.Wrap(Obj : Instance, Props : {[any] : any}) : WrappedObj
 
@@ -40,11 +40,11 @@ function ProxyLib.Wrap(Obj : Instance, Props : {[any] : any}) : WrappedObj
 		__type = "WrappedObj"; 
 		__wrapped = true; 
 	})
-	
+
 end
 
 function ProxyLib.UnWrap(Obj : Instance)
-	if not ProxyLib.Typeof(Obj, "__wrapped") then return Obj end
+	if not ProxyLib.Typeof(Obj, "__wrapped") then return Obj end;
 	return Obj:UnWrap();
 end
 
@@ -92,11 +92,11 @@ function ProxyLib.NewProxy(Props : {[any] : any}, HookMeta : boolean?) : Proxy
 
 	local Closure = setmetatable(
 		{__indexEvent = setmetatable({OnIndex = function(Expected, Listener) 
-			IndexConnection:Connect(function(Recieved)
-				if Expected == Recieved then
-					Listener(Recieved)
-				end
-			end)
+			IndexConnection:Connect(function(Recieved) 
+				if Expected == Recieved then 
+					Listener(Recieved);
+				end;
+			end);
 		end},{__index = IndexConnection}), __newindexEvent = setmetatable({OnIndex = function(Expected, Listener)
 			NewIndexConnection:Connect(function(Recieved) 
 				if Expected == Recieved then 
@@ -110,13 +110,10 @@ function ProxyLib.NewProxy(Props : {[any] : any}, HookMeta : boolean?) : Proxy
 end
 
 function ProxyLib.Proxify(Tab : {[any] : any}) : Proxy
-
 	local Proxy = ProxyLib.NewProxy();
-
 	for i,v in Tab do	
-		rawset(Proxy, i, v)
-	end
-
+		rawset(Proxy, i, v);
+	end;
 	return Proxy;
 end
 
@@ -124,31 +121,31 @@ end
 
 function ProxyLib.MetamethodHookFunc(Tab : {[any] : any}, Specified : {string}, Func : () -> ()) : boolean
 	local Base = getmetatable(Tab) or getmetatable(setmetatable(Tab, {}));
-	
+
 	if typeof(Base) == "string" then
 		return;
 	end;
-	
+
 	local RobloxMetamethods = {"__index", "__newindex", "__tostring", "__call", "__mode", "__eq", "__len", "__pow", "__concat", "__unm", "__add", "__sub", "__mul", "__div", "__lt", "__iter", "__idiv"};	
 
 	for _,v in ipairs(Specified) do
 		local Found = table.find(RobloxMetamethods, v)
 		if Found then
-			Base[RobloxMetamethods[Found]] = Func
-		end
-	end
-	
-	return Tab
+			Base[RobloxMetamethods[Found]] = Func;
+		end;
+	end;
+
+	return Tab;
 end
 
 function ProxyLib.RecursiveMetaDetector(Tab : {[any] : any}) : boolean
 	for _,Value in Tab do 
 		if typeof(Value) ~= "userdata" or typeof(Value) ~= "table" then continue end
 		if getmetatable(Value) or ProxyLib.RecursiveMetaSearch(Value) then
-			return true
-		end
-	end
-	return false
+			return true;
+		end;
+	end;
+	return false;
 end
 
 function ProxyLib.MetaIndexSearch(Tab : {[any] : any}, Index : any) : any
