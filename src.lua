@@ -11,7 +11,7 @@ type Proxy = {
 	__newindexEvent : typeof(Signal) & {OnIndex : (Index : string) -> typeof(Signal)};
 };
 
-type WrappedObj = {UnWrap : () -> Instance} & Proxy & Instance;
+type WrappedObj = {SetInterfaceProperty : (Index : string, Prop : any) -> (), UnWrap : () -> Instance} & Proxy & Instance;
 
 --// Wrapping
 
@@ -32,7 +32,7 @@ end
 
 --// Proxy
 
-function ProxyLib.NewProxy(Props : {[any] : any}, HookMeta : boolean?) : Proxy
+function ProxyLib.NewProxy(Props : {[any] : any}, HookMeta : boolean?)
 	if HookMeta == nil then
 		HookMeta = true;
 	end;
@@ -210,8 +210,7 @@ function ProxyLib.MetamethodHookFunc(Tab : {[any] : any}, Specified : {string}, 
 	return Tab;
 end
 
-function ProxyLib.RecursiveMetaDetector(Tab : {[any] : any}) : boolean
-
+function ProxyLib.RecursiveMetaDetector(Tab : {[any] : any}) : {[any] : any}
 	local Meta = ProxyLib.RetrieveMetatable(Tab) or {}
 
 	for _,v in Meta do
