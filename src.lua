@@ -15,6 +15,36 @@ type WrappedObj = {SetInterfaceProperty : (Index : string, Prop : any) -> (), Un
 
 --// Wrapping
 
+function ProxyLib.Wrap(Obj : Instance, Props : {[any] : any}) : WrappedObj
+	local Interface = {};
+
+	for i,v in Props or {} do
+		Interface[i] = v
+	end
+	function Interface.UnWrap()
+		return Obj
+	end
+	function Interface.SetInterfaceIndex(Index, Property)
+		Interface[Index] = Property
+	end
+	return ProxyLib.Proxify({},{
+		__index = function(_, Index)
+			if Interface[Index] then
+				return Interface[Index];
+			end;
+			return Obj;
+		end,
+		__newindex = function(_, Index, Val)
+			if Interface[Index] then
+				return Interface[Index];
+			end;
+			Obj[Index] = Val;
+		end,
+		__wrapped = true;
+		__type = "WrappedObj"
+	})
+end
+
 function ProxyLib.UnWrap(Obj : Instance)
 	if not ProxyLib.IsWrapped(Obj) then return Obj end
 	return Obj.UnWrap();
@@ -52,37 +82,6 @@ function ProxyLib.NewProxy(Props : {[any] : any}, HookMeta : boolean?)
 	end;
 
 	return ProxyBase
-end
-
-
-function ProxyLib.Wrap(Obj : Instance, Props : {[any] : any}) : WrappedObj
-	local Interface = {};
-
-	for i,v in Props or {} do
-		Interface[i] = v
-	end
-	function Interface.UnWrap()
-		return Obj
-	end
-	function Interface.SetInterfaceIndex(Index, Property)
-		Interface[Index] = Property
-	end
-	return ProxyLib.Proxify({},{
-		__index = function(_, Index)
-			if Interface[Index] then
-				return Interface[Index];
-			end;
-			return Obj;
-		end,
-		__newindex = function(_, Index, Val)
-			if Interface[Index] then
-				return Interface[Index];
-			end;
-			Obj[Index] = Val;
-		end,
-		__wrapped = true;
-		__type = "WrappedObj"
-	})
 end
 
 function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Proxy
@@ -244,7 +243,6 @@ function ProxyLib.RetrieveMetatable(Tab : any, Attach : boolean?) : {[string] : 
 
 	return Mt;
 end
-
 
 
 return ProxyLib;
