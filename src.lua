@@ -92,12 +92,12 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Pr
 			local OnIndexSignal = Signal.New();
 			NewIndexConnection:Connect(function(Recieved) 
 				if Expected == Recieved then 
-					OnIndexSignal:Fire(Recieved)
+					OnIndexSignal:Fire(Recieved);
 				end;
 			end);
-			return OnIndexSignal
+			return OnIndexSignal;
 		end},
-	{__index = NewIndexConnection})}
+	{__index = NewIndexConnection})};
 	
 	
 	return ProxyLib.NewProxy({
@@ -110,11 +110,11 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Pr
 			if Metadata.__index then
 				if typeof(Metadata.__index) == "function" then
 					return Metadata:__index(Index)
-				end
-				return Metadata.__index
-			end
+				end;
+				return Metadata.__index;
+			end;
 			return Tab[Index];
-		end,
+		end;
 		__newindex = function(_, Index, Val)
 			Tab[Index] = Val;
 			NewIndexConnection:Fire(Index);
@@ -123,9 +123,9 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Pr
 				if typeof(Metadata.__newindex) == "function" then
 					return Metadata:__newindex(Index, Val)
 				end
-				return Metadata.__newindex
-			end
-		end,
+				return Metadata.__newindex;
+			end;
+		end;
 	});
 end
 
