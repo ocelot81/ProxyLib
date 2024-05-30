@@ -15,6 +15,46 @@ type WrappedObj = {UnWrap : () -> Instance} & Proxy & Instance;
 
 --// Wrapping
 
+function ProxyLib.UnWrap(Obj : Instance)
+	if not ProxyLib.IsWrapped(Obj) then return Obj end
+	return Obj.UnWrap();
+end
+
+function ProxyLib.IsWrapped(Obj : Instance)
+	local Meta = ProxyLib.RetrieveMetatable(Obj);
+	
+	if not Meta then
+		return Obj
+	end
+
+	return Obj.__wrapped
+end
+
+--// Proxy
+
+function ProxyLib.NewProxy(Props : {[any] : any}, HookMeta : boolean?) : Proxy
+	if HookMeta == nil then
+		HookMeta = true;
+	end;
+
+	local ProxyBase = newproxy(HookMeta);
+
+	if not HookMeta then
+		return ProxyBase;
+	end;
+
+	local Meta = getmetatable(ProxyBase);
+
+	Props = Props or {};
+
+	for i,v in Props do
+		Meta[i] = v;
+	end;
+
+	return ProxyBase
+end
+
+
 function ProxyLib.Wrap(Obj : Instance, Props : {[any] : any}) : WrappedObj
 	local Interface = {};
 
@@ -45,50 +85,10 @@ function ProxyLib.Wrap(Obj : Instance, Props : {[any] : any}) : WrappedObj
 	})
 end
 
-function ProxyLib.UnWrap(Obj : Instance)
-	if not ProxyLib.IsWrapped(Obj) then return Obj end
-	return Obj.UnWrap();
-end
-
-function ProxyLib.IsWrapped(Obj : Instance)
-	local Meta = ProxyLib.RetrieveMetatable(Obj);
-	
-	if not Meta then
-		return Obj
-	end
-	
-	return Obj.__wrapped
-end
-
---// Proxy
-
-function ProxyLib.NewProxy(Props : {[any] : any}, HookMeta : boolean?) : Proxy
-	if HookMeta == nil then
-		HookMeta = true;
-	end;
-
-	local ProxyBase = newproxy(HookMeta);
-
-	if not HookMeta then
-		return ProxyBase;
-	end;
-
-	local Meta = getmetatable(ProxyBase);
-
-	Props = Props or {};
-
-	for i,v in Props do
-		Meta[i] = v;
-	end;
-
-	return ProxyBase
-end
-
-
 function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Proxy
 
 	Metadata = Metadata or {};
-
+	
 	local NewIndexConnection = Signal.New();
 	local IndexConnection = Signal.New();
 
@@ -103,9 +103,9 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Pr
 			return OnNewIndexSignal
 		end},{__index = IndexConnection}), __newindexEvent = setmetatable({OnIndex = function(Expected)
 			local OnIndexSignal = Signal.New();
-			NewIndexConnection:Connect(function(Recieved) 
+			NewIndexConnection:Connect(function(Recieved, Value) 
 				if Expected == Recieved then 
-					OnIndexSignal:Fire(Recieved);
+					OnIndexSignal:Fire(Value);
 				end;
 			end);
 			return OnIndexSignal;
@@ -119,7 +119,7 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Pr
 				return Closure[Index]
 			end
 			IndexConnection:Fire(Index);
-
+			
 			if Metadata[Index] then
 				return Metadata[Index];
 			end;
@@ -134,7 +134,7 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Pr
 		end;
 		__newindex = function(_, Index, Val)
 			Tab[Index] = Val;
-			NewIndexConnection:Fire(Index);
+			NewIndexConnection:Fire(Index, Val);
 
 			if Metadata.__newindex then
 				if typeof(Metadata.__newindex) == "function" then
@@ -149,7 +149,17 @@ end
 --// Support Functions
 
 function ProxyLib.Typeof(Tab : {[any] : any}) : any
-	return ProxyLib.MetaIndexSearch(Tab, "__type");
+	local Type = ProxyLib.MetaIndexSearch(Tab, "__type");
+	
+	if Type then
+		return Type;
+	end;
+	
+	if ProxyLib.RetrieveMetatable(Tab) then
+		return Tab.__type
+	end
+	
+	return typeof(Tab)
 end
 
 function ProxyLib.ProxyFunc(func : () -> ()) : Proxy
@@ -162,14 +172,18 @@ function ProxyLib.MetaIndexSearch(Tab : {[any] : any}, Index : any) : any
 	local Meta = ProxyLib.RetrieveMetatable(Tab, true)
 
 	if not Meta then 
-		return;
+		return false;
 	end;
-
+	
 	for MetaIndex, Value in Meta do
 		if MetaIndex == Index then
 			return Value;
 		end;
 	end;
+
+	if ProxyLib.IsWrapped(Tab) then
+		return Tab[Index]
+	end
 
 	return nil;
 end
@@ -210,14 +224,20 @@ function ProxyLib.RecursiveMetaDetector(Tab : {[any] : any}) : boolean
 	return false
 end
 
-
-
-function ProxyLib.RetrieveMetatable(Tab : any, Attach : boolean?)
+function ProxyLib.RetrieveMetatable(Tab : any, Attach : boolean?) : {[string] : any}
 	if typeof(Tab) ~= "table" and typeof(Tab) ~= "userdata" then
 		return nil;
 	end
 	
-	local Mt = getmetatable(Tab); if Attach then Mt = getmetatable(setmetatable(Tab, {})) end
+	local Mt = getmetatable(Tab)
+	
+	if not Mt and Attach then
+		if typeof(Tab) == "userdata" then
+			return nil
+		end
+		
+		Mt = getmetatable(setmetatable(Tab, {}))
+	end
 
 	if not Mt or typeof(Mt) == "string" then
 		return nil;
