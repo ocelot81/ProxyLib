@@ -3,3 +3,4 @@ indent_style = tab
 indent_size = 4
 trim_trailing_whitespace = true
 end_of_line = lf
+tab_width = 4
