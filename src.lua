@@ -190,7 +190,7 @@ end
 
 --// Metamethods
 
-function ProxyLib.MetamethodHookFunc(Tab : {[any] : any}, Specified : {[string] : () -> ()}) : boolean
+function ProxyLib.MetamethodHookFunc(Tab : {[any] : any}, Specified : {[string] : () -> ()}) : {[any] : any}
 	
 	local Meta = ProxyLib.RetrieveMetatable(Tab, true)
 	
