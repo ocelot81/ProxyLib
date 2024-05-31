@@ -30,7 +30,6 @@ function ProxyLib.IsWrapped(Obj : Instance)
 	return Obj.__wrapped;
 end
 
-
 function ProxyLib.Wrap(Obj : Instance, Props : {[any] : any}) : WrappedObj
 	local Interface = {};
 
