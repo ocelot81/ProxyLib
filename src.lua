@@ -84,6 +84,7 @@ function ProxyLib.NewProxy(Props : {[any] : any}, HookMeta : boolean?)
 	return ProxyBase;
 end
 
+
 function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Proxy
 
 	Metadata = Metadata or {};
@@ -109,7 +110,7 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Pr
 			end);
 			return OnIndexSignal;
 		end},
-	{__index = NewIndexConnection})};
+	{__index = NewIndexConnection}), __proxy = Tab;};
 
 	return ProxyLib.NewProxy({
 		__index = function(_, Index)
@@ -132,7 +133,7 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Pr
 		end;
 		__newindex = function(_, Index, Val)
 			NewIndexConnection:Fire(Index, Val);
-			
+
 			if Metadata.__newindex then
 				if typeof(Metadata.__newindex) == "function" then
 					return Metadata:__newindex(Index, Val);
@@ -144,7 +145,23 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Pr
 	});
 end
 
-function ProxyLib.ProxyFunc(func : () -> ()) : Proxy
+function ProxyLib.Proxy() : Proxy
+	return ProxyLib.Proxify({},{})
+end
+
+function ProxyLib.DeProxify(Obj : any) : Proxy
+	if typeof(Obj) ~= "userdata" then
+		return Obj;
+	end;
+	
+	if not ProxyLib.RetrieveMetatable(Obj) then
+		return {};
+	end
+	
+	return Obj.__proxy
+end
+
+function ProxyLib.ProxyFunc(func : () -> ()) : any
 	return ProxyLib.NewProxy({
 		__call = func;
 	});
@@ -185,6 +202,8 @@ function ProxyLib.MetaIndexSearch(Tab : {[any] : any}, Index : any) : any
 
 	return nil;
 end
+
+
 
 --// Metamethods
 
@@ -248,13 +267,13 @@ function ProxyLib.ExtractMeta(Tab : any) : {[string] : any}
 	if not Meta then
 		return {};
 	end;
-	
+
 	Tab = {};
-	
+
 	for i,v in Meta do
 		Tab[i] = v;
 	end;
-	
+
 	return Tab;
 end
 
