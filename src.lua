@@ -30,30 +30,6 @@ function ProxyLib.IsWrapped(Obj : Instance)
 	return Obj.__wrapped;
 end
 
---// Proxy
-
-function ProxyLib.NewProxy(Props : {[any] : any}, HookMeta : boolean?)
-	if HookMeta == nil then
-		HookMeta = true;
-	end;
-
-	local ProxyBase = newproxy(HookMeta);
-
-	if not HookMeta then
-		return ProxyBase;
-	end;
-
-	local Meta = getmetatable(ProxyBase);
-
-	Props = Props or {};
-
-	for i,v in Props do
-		Meta[i] = v;
-	end;
-
-	return ProxyBase;
-end
-
 
 function ProxyLib.Wrap(Obj : Instance, Props : {[any] : any}) : WrappedObj
 	local Interface = {};
@@ -83,6 +59,30 @@ function ProxyLib.Wrap(Obj : Instance, Props : {[any] : any}) : WrappedObj
 		__wrapped = true;
 		__type = "WrappedObj"
 	})
+end
+
+--// Proxy
+
+function ProxyLib.NewProxy(Props : {[any] : any}, HookMeta : boolean?)
+	if HookMeta == nil then
+		HookMeta = true;
+	end;
+
+	local ProxyBase = newproxy(HookMeta);
+
+	if not HookMeta then
+		return ProxyBase;
+	end;
+
+	local Meta = getmetatable(ProxyBase);
+
+	Props = Props or {};
+
+	for i,v in Props do
+		Meta[i] = v;
+	end;
+
+	return ProxyBase;
 end
 
 function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Proxy
