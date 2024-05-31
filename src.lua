@@ -2,7 +2,7 @@
 --// ProxyLib
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage");
-local Signal = require(ReplicatedStorage.Signal)
+local Signal = require(ReplicatedStorage.Signal);
 
 local ProxyLib = {};
 
@@ -15,38 +15,8 @@ type WrappedObj = {SetInterfaceProperty : (Index : string, Prop : any) -> (), Un
 
 --// Wrapping
 
-function ProxyLib.Wrap(Obj : Instance, Props : {[any] : any}) : WrappedObj
-	local Interface = {};
-
-	for i,v in Props or {} do
-		Interface[i] = v
-	end
-	function Interface.UnWrap()
-		return Obj
-	end
-	function Interface.SetInterfaceIndex(Index, Property)
-		Interface[Index] = Property
-	end
-	return ProxyLib.Proxify({},{
-		__index = function(_, Index)
-			if Interface[Index] then
-				return Interface[Index];
-			end;
-			return Obj;
-		end,
-		__newindex = function(_, Index, Val)
-			if Interface[Index] then
-				return Interface[Index];
-			end;
-			Obj[Index] = Val;
-		end,
-		__wrapped = true;
-		__type = "WrappedObj"
-	})
-end
-
 function ProxyLib.UnWrap(Obj : Instance)
-	if not ProxyLib.IsWrapped(Obj) then return Obj end
+	if not ProxyLib.IsWrapped(Obj) then return Obj end;
 	return Obj.UnWrap();
 end
 
@@ -54,10 +24,10 @@ function ProxyLib.IsWrapped(Obj : Instance)
 	local Meta = ProxyLib.RetrieveMetatable(Obj);
 	
 	if not Meta then
-		return false;
+		return Obj;
 	end;
 
-	return Obj.__wrapped
+	return Obj.__wrapped;
 end
 
 --// Proxy
@@ -81,27 +51,58 @@ function ProxyLib.NewProxy(Props : {[any] : any}, HookMeta : boolean?)
 		Meta[i] = v;
 	end;
 
-	return ProxyBase
+	return ProxyBase;
+end
+
+
+function ProxyLib.Wrap(Obj : Instance, Props : {[any] : any}) : WrappedObj
+	local Interface = {};
+
+	for i,v in Props or {} do
+		Interface[i] = v
+	end
+	function Interface.UnWrap()
+		return Obj
+	end
+	function Interface.SetInterfaceProperty(Index, Property)
+		Interface[Index] = Property
+	end
+	return ProxyLib.Proxify({},{
+		__index = function(_, Index)
+			if Interface[Index] then
+				return Interface[Index];
+			end;
+			return Obj;
+		end,
+		__newindex = function(_, Index, Val)
+			if Interface[Index] then
+				return Interface[Index];
+			end;
+			Obj[Index] = Val;
+		end,
+		__wrapped = true;
+		__type = "WrappedObj"
+	})
 end
 
 function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Proxy
 
 	Metadata = Metadata or {};
 	
-	local NewIndexConnection = Signal.New();
-	local IndexConnection = Signal.New();
+	local NewIndexConnection = Signal.new();
+	local IndexConnection = Signal.new();
 
 	local Closure = {
 		__indexEvent = setmetatable({OnIndex = function(Expected) 
-			local OnNewIndexSignal = Signal.New();
+			local OnNewIndexSignal = Signal.new();
 			IndexConnection:Connect(function(Recieved) 
 				if Expected == Recieved then 
-					OnNewIndexSignal:Fire(Recieved);
+					OnNewIndexSignal:Fire(Recieved)
 				end;
 			end);
 			return OnNewIndexSignal
 		end},{__index = IndexConnection}), __newindexEvent = setmetatable({OnIndex = function(Expected)
-			local OnIndexSignal = Signal.New();
+			local OnIndexSignal = Signal.new();
 			NewIndexConnection:Connect(function(Recieved, Value) 
 				if Expected == Recieved then 
 					OnIndexSignal:Fire(Value);
@@ -125,7 +126,7 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Pr
 
 			if Metadata.__index then
 				if typeof(Metadata.__index) == "function" then
-					return Metadata:__index(Index);
+					return Metadata:__index(Index)
 				end;
 				return Metadata.__index;
 			end;
@@ -137,8 +138,8 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Pr
 
 			if Metadata.__newindex then
 				if typeof(Metadata.__newindex) == "function" then
-					return Metadata:__newindex(Index, Val);
-				end;
+					return Metadata:__newindex(Index, Val)
+				end
 				return Metadata.__newindex;
 			end;
 		end;
@@ -161,7 +162,7 @@ function ProxyLib.Typeof(Tab : {[any] : any}) : any
 	return typeof(Tab);
 end
 
-function ProxyLib.ProxyFunc(func : () -> ()) : any
+function ProxyLib.ProxyFunc(func : () -> ()) : Proxy
 	return ProxyLib.NewProxy({
 		__call = func;
 	});
@@ -169,7 +170,7 @@ end
 
 function ProxyLib.MetaIndexSearch(Tab : {[any] : any}, Index : any) : any
 	local Meta = ProxyLib.RetrieveMetatable(Tab, true)
-
+	
 	if not Meta then 
 		return false;
 	end;
@@ -181,66 +182,79 @@ function ProxyLib.MetaIndexSearch(Tab : {[any] : any}, Index : any) : any
 	end;
 
 	if ProxyLib.IsWrapped(Tab) then
-		return Tab[Index]
-	end
+		return Tab[Index];
+	end;
 
 	return nil;
 end
 
 --// Metamethods
 
-function ProxyLib.MetamethodHookFunc(Tab : {[any] : any}, Specified : {string}, Func : () -> ()) : boolean
+function ProxyLib.MetamethodHookFunc(Tab : {[any] : any}, Specified : {[string] : () -> ()}) : boolean
 	
 	local Meta = ProxyLib.RetrieveMetatable(Tab, true)
-
+	
 	if not Meta then 
 		return;
 	end;
 
-	local RobloxMetamethods = {"__index", "__newindex", "__tostring", "__call", "__mode", "__eq", "__len", "__pow", "__concat", "__unm", "__add", "__sub", "__mul", "__div", "__lt", "__iter", "__idiv"};	
-
-	for _,v in ipairs(Specified) do
-		local Found = table.find(RobloxMetamethods, v)
-		if Found then
-			Meta[RobloxMetamethods[Found]] = Func;
-		end;
-	end;
-
+	local RobloxMetamethods = {"__index", "__newindex", "__tostring", "__metatable", "__call", "__mode", "__eq", "__len", "__pow", "__concat", "__unm", "__add", "__sub", "__mul", "__div", "__lt", "__iter", "__idiv", "__type"};	 --// technically not __type but its useful
+	
+	for i,v in Specified do
+		if table.find(RobloxMetamethods, i) then
+			Meta[i] = v
+		end
+	end
+	
 	return Tab;
 end
 
-function ProxyLib.RecursiveMetaDetector(Tab : {[any] : any}) : {[any] : any}
-	local Meta = ProxyLib.RetrieveMetatable(Tab) or {}
+function ProxyLib.RecursiveMetaDetector(Tab : {[any] : any}) : boolean
+
+	local Meta = ProxyLib.RetrieveMetatable(Tab) or {};
 
 	for _,v in Meta do
 		if typeof(v) ~= "userdata" and typeof(v) ~= "table" then continue end
 		if getmetatable(v) or ProxyLib.RecursiveMetaDetector(v) then
-			return true
-		end			
-	end
+			return true;
+		end;		
+	end;
 
-	return false
+	return false;
 end
 
-function ProxyLib.RetrieveMetatable(Tab : any, Attach : boolean?) : {[string] : any}
+
+
+function ProxyLib.FullLock(Tab : {[any] : any}) : {[any] : any}
+	return ProxyLib.MetamethodHookFunc(Tab, {
+		__newindex = function() return end;
+		__type = "ReadOnlyTable";
+		__metatable = "ReadOnly";
+	})
+end
+
+function ProxyLib.RetrieveMetatable(Tab : any, Attach : boolean?, __Mt : boolean) : {[string] : any}
 	if typeof(Tab) ~= "table" and typeof(Tab) ~= "userdata" then
 		return nil;
 	end
 	
 	local Mt = getmetatable(Tab)
 	
-	if not Mt and Attach then
+	if not Mt and not Attach then
+		return nil;
+	elseif Attach then
 		if typeof(Tab) == "userdata" then
 			return nil
 		end
-		
 		Mt = getmetatable(setmetatable(Tab, {}))
-	end
-
-	if not Mt or typeof(Mt) == "string" then
-		return nil;
+	elseif typeof(Mt) == "string" then
+		if __Mt then
+			return Mt
+		end
+		return nil
 	end;
 
+	
 	return Mt;
 end
 
