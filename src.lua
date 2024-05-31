@@ -131,7 +131,6 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Pr
 			return Tab[Index];
 		end;
 		__newindex = function(_, Index, Val)
-			Tab[Index] = Val;
 			NewIndexConnection:Fire(Index, Val);
 
 			if Metadata.__newindex then
@@ -140,6 +139,8 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Pr
 				end
 				return Metadata.__newindex;
 			end;
+
+			Tab[Index] = Val;
 		end;
 	});
 end
