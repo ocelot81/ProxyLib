@@ -112,7 +112,6 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Pr
 		end},
 	{__index = NewIndexConnection})};
 
-
 	return ProxyLib.NewProxy({
 		__index = function(_, Index)
 			if Closure[Index] then
@@ -146,6 +145,12 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Pr
 	});
 end
 
+function ProxyLib.ProxyFunc(func : () -> ()) : Proxy
+	return ProxyLib.NewProxy({
+		__call = func;
+	});
+end
+
 --// Support Functions
 
 function ProxyLib.Typeof(Tab : {[any] : any}) : any
@@ -160,12 +165,6 @@ function ProxyLib.Typeof(Tab : {[any] : any}) : any
 	end;
 	
 	return typeof(Tab);
-end
-
-function ProxyLib.ProxyFunc(func : () -> ()) : Proxy
-	return ProxyLib.NewProxy({
-		__call = func;
-	});
 end
 
 function ProxyLib.MetaIndexSearch(Tab : {[any] : any}, Index : any) : any
@@ -198,7 +197,7 @@ function ProxyLib.MetamethodHookFunc(Tab : {[any] : any}, Specified : {[string] 
 		return;
 	end;
 
-	local RobloxMetamethods = {"__index", "__newindex", "__tostring", "__metatable", "__call", "__mode", "__eq", "__len", "__pow", "__concat", "__unm", "__add", "__sub", "__mul", "__div", "__lt", "__iter", "__idiv", "__type"};	 --// technically not __type but its useful
+	local RobloxMetamethods = {"__index", "__newindex", "__tostring", "__metatable", "__call", "__mode", "__eq", "__len", "__pow", "__concat", "__unm", "__add", "__sub", "__mul", "__div", "__lt", "__iter", "__idiv", "__type"}; --// technically not __type but its useful
 	
 	for i,v in Specified do
 		if table.find(RobloxMetamethods, i) then
@@ -222,8 +221,6 @@ function ProxyLib.RecursiveMetaDetector(Tab : {[any] : any}) : boolean
 
 	return false;
 end
-
-
 
 function ProxyLib.FullLock(Tab : {[any] : any}) : {[any] : any}
 	return ProxyLib.MetamethodHookFunc(Tab, {
@@ -254,7 +251,6 @@ function ProxyLib.RetrieveMetatable(Tab : any, Attach : boolean?, __Mt : boolean
 		return nil
 	end;
 
-	
 	return Mt;
 end
 
