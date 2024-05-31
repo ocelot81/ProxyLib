@@ -1,4 +1,4 @@
-## Library dedicated to Proxies/Wrapping with extra support functions for metamethods
+## Library dedicated to Proxies/Roblox Instance Wrapping with extra support functions for metamethods
 
 ### ⚠️ DISCLAIMER: Not fully compatible with stravants signal, use https://github.com/8ch32bit/MockSignal or another custom RBXScriptSignal with this library
 
