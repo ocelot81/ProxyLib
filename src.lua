@@ -30,28 +30,23 @@ function ProxyLib.IsWrapped(Obj : Instance)
 	return Obj.__wrapped;
 end
 
-function ProxyLib.Wrap(Obj : Instance, Props : {[any] : any}) : WrappedObj
-	local Interface = {};
-
-	for i,v in Props or {} do
-		Interface[i] = v
-	end
-	function Interface.UnWrap()
+function ProxyLib.Wrap(Obj : Instance, Properties : {[any] : any}) : WrappedObj
+	function Properties.UnWrap()
 		return Obj;
 	end;
-	function Interface.SetInterfaceProperty(Index, Property)
-		Interface[Index] = Property;
+	function Properties.SetInterfaceProperty(Index, Property)
+		Properties[Index] = Property;
 	end;
 	return ProxyLib.Proxify({},{
 		__index = function(_, Index)
-			if Interface[Index] then
-				return Interface[Index];
+			if Properties[Index] then
+				return Properties[Index];
 			end;
 			return Obj;
 		end,
 		__newindex = function(_, Index, Val)
-			if Interface[Index] then
-				return Interface[Index];
+			if Properties[Index] then
+				return Properties[Index];
 			end;
 			Obj[Index] = Val;
 		end,
