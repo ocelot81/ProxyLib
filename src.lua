@@ -200,7 +200,6 @@ function ProxyLib.Typeof(Tab : {[any] : any}) : any
 	return typeof(Tab);
 end
 
-
 function ProxyLib.MetaIndexSearch(Tab : {[any] : any}, Index : any) : any
 	local Meta = ProxyLib.RetrieveMetatable(Tab, true)
 
@@ -223,26 +222,6 @@ end
 
 --// Metamethods
 
-function ProxyLib.AttachEventHandler(Tab : {[any] : any}) : Proxy & {[any] : any}
-
-	if typeof(Tab) ~= "table" then
-		return;
-	end;
-
-	local Meta = ProxyLib.RetrieveMetatable(ProxyLib.Proxify({},{}));
-
-	local Current = getmetatable(Tab)
-
-	if not Current or typeof(Current) == "string" then
-		Current = getmetatable(setmetatable(Tab, {}))
-	end
-
-	Current.__newindex = Meta.__newindex;
-	Current.__index = Meta.__index;
-
-	return Tab;
-end
-
 function ProxyLib.MetamethodHookFunc(Tab : {[any] : any}, Specified : {[string] : () -> ()}) : {[any] : any}
 
 	local Meta = ProxyLib.RetrieveMetatable(Tab, true);
@@ -261,7 +240,6 @@ function ProxyLib.MetamethodHookFunc(Tab : {[any] : any}, Specified : {[string] 
 
 	return Tab;
 end
-
 
 function ProxyLib.FullLock(Tab : {[any] : any}) : {[any] : any}
 	return ProxyLib.MetamethodHookFunc(Tab, {
