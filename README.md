@@ -11,7 +11,6 @@ Current API:
 	ProxyLib.Deproxify(Obj : Userdata) -> Original table that was proxified (unless __metatable was filled in)
 	-- Support --
 	ProxyLib.Typeof(Tab : any) -> Returns the __type value or typeof(Tab) if not feasible
-	ProxyLib.AttachEventHandler(Tab : Table) -> Returns the table with EventHandler closure (NewIndex & Index and their filter connections)
 	ProxyLib.FullLock(Tab : Table) -> Returns the table in a version where its read only & secured
 	-- Metamethods
 	ProxyLib.MetamethodHookFunc(Tab : Table, Methods : Table | Userdata) -> Returns version of the tab where its metamethods are supplied in the Methods argument
