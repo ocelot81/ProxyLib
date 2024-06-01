@@ -31,9 +31,9 @@ function ProxyLib.IsWrapped(Obj : Instance)
 end
 
 function ProxyLib.Wrap(Obj : Instance, Properties : {[any] : any}?) : WrappedObj
-	
+
 	Properties = Properties or {};
-	
+
 	function Properties.UnWrap()
 		return Obj;
 	end;
@@ -116,8 +116,10 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}?) : P
 			end);
 			return OnValueSignal;	
 		end},
-		{__index = NewIndexConnection}), __proxy = Tab;};
+	{__index = NewIndexConnection}), __proxy = Tab;};
 	
+	local ExistingMeta = ProxyLib.RetrieveMetatable(Tab);
+
 	local ProxyMeta = {
 		__index = function(_, Index)
 			if Closure[Index] then
@@ -130,7 +132,13 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}?) : P
 					return Metadata:__index(Index)
 				end;
 				return Metadata.__index;
+			elseif ExistingMeta and ExistingMeta.__index then
+				if typeof(ExistingMeta.__index) == "function" then
+					return ExistingMeta:__index(Index)
+				end;
+				return ExistingMeta.__index;
 			end;
+			
 			return Tab[Index];
 		end;
 		__newindex = function(_, Index, Val)
@@ -141,6 +149,11 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}?) : P
 					return Metadata:__newindex(Index, Val);
 				end;
 				return Metadata.__newindex;
+			elseif ExistingMeta and ExistingMeta.__newindex then
+				if typeof(ExistingMeta.__newindex) == "function" then
+					return ExistingMeta:__newindex(Index, Val)
+				end;
+				return ExistingMeta.__newindex;
 			end;
 
 			Tab[Index] = Val
@@ -149,14 +162,14 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}?) : P
 			return #Tab
 		end,
 	};
-	
-	for Index, Metamethod in Metadata do --// Needed to support operands and other metamethods (__newindex and __index can be set in metadata but its handled internally)
+
+	for Index, Metamethod in Metadata do --//__newindex and __index can be set in metadata but its handled internally
 		if Index == "__index" or Index == "__newindex" then
 			continue;
 		end;
 		ProxyMeta[Index] = Metamethod;
 	end 
-	
+
 	return ProxyLib.NewProxy(ProxyMeta);
 end
 
