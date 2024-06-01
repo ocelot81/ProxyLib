@@ -1,11 +1,11 @@
-## Library dedicated to Proxies/Roblox instance wrapping with extra support functions for metamethods
+## Library dedicated to Proxies/Metamethods & support for instance wrapping
 
 ### ⚠️ DISCLAIMER: Not fully compatible with stravants signal, use https://github.com/8ch32bit/MockSignal or another custom RBXScriptSignal with this library
 
 Current API:
 
 	-- Proxies --
-	ProxyLib.NewProxy(Methods : Table, HookMeta : boolean) -> Returns a plain userdata with supplied metamethods, returns a blank one if HookMeta is false) 
+	ProxyLib.NewProxy(Methods : Table, HookMeta : boolean?) -> Returns a plain userdata with supplied metamethods, returns a blank one if HookMeta is false) 
 	ProxyLib.Proxy() -> Blank proxified table (/w Event handling)
 	ProxyLib.Proxify(Tab : Table, Metadata : Table?) -> Proxified table containing Tab with additional supplied metamethods
 	ProxyLib.Deproxify(Obj : Userdata) -> Original table that was proxified (unless __metatable was filled in)
