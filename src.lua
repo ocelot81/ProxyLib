@@ -11,7 +11,7 @@ type Proxy = {
 	__newindexEvent : typeof(Signal) & {OnIndex : (Index : string) -> typeof(Signal), OnValue : (Value : any) -> typeof(Signal)};
 };
 
-type WrappedObj = {SetInterfaceProperty : (Index : string, Prop : any) -> (), UnWrap : () -> Instance} & Proxy & Instance;
+type WrappedObj = {SetInterfaceProperty : (Index : string, Property : any) -> (), UnWrap : () -> Instance} & Proxy & Instance;
 
 --// Wrapping
 
@@ -30,7 +30,10 @@ function ProxyLib.IsWrapped(Obj : Instance)
 	return Obj.__wrapped;
 end
 
-function ProxyLib.Wrap(Obj : Instance, Properties : {[any] : any}) : WrappedObj
+function ProxyLib.Wrap(Obj : Instance, Properties : {[any] : any}?) : WrappedObj
+	
+	Properties = Properties or {};
+	
 	function Properties.UnWrap()
 		return Obj;
 	end;
@@ -80,7 +83,7 @@ function ProxyLib.NewProxy(Props : {[any] : any}, HookMeta : boolean?)
 end
 
 
-function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Proxy
+function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}?) : Proxy
 
 	Metadata = Metadata or {};
 
@@ -214,18 +217,18 @@ function ProxyLib.AttachEventHandler(Tab : {[any] : any}) : Proxy & {[any] : any
 	if typeof(Tab) ~= "table" then
 		return;
 	end;
-	
+
 	local Meta = ProxyLib.RetrieveMetatable(ProxyLib.Proxify({},{}));
-	
+
 	local Current = getmetatable(Tab)
-	
+
 	if not Current or typeof(Current) == "string" then
 		Current = getmetatable(setmetatable(Tab, {}))
 	end
-	
+
 	Current.__newindex = Meta.__newindex;
 	Current.__index = Meta.__index;
-	
+
 	return Tab;
 end
 
