@@ -20,7 +20,6 @@ function ProxyLib.UnWrap(Obj : Instance)
 	return Obj.UnWrap();
 end
 
-
 function ProxyLib.IsWrapped(Obj : Instance)
 	local Meta = ProxyLib.RetrieveMetatable(Obj);
 
@@ -30,7 +29,6 @@ function ProxyLib.IsWrapped(Obj : Instance)
 
 	return Obj.__wrapped;
 end
-
 
 function ProxyLib.Wrap(Obj : Instance, Properties : {[any] : any}?) : WrappedObj
 	
@@ -152,7 +150,7 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}?) : P
 		end,
 	};
 	
-	for Index, Metamethod in Metadata do --// Needed to support operands (__newindex and __index can be set in metadata but its handled internally)
+	for Index, Metamethod in Metadata do --// Needed to support operands and other metamethods (__newindex and __index can be set in metadata but its handled internally)
 		if Index == "__index" or Index == "__newindex" then
 			continue;
 		end;
@@ -264,19 +262,6 @@ function ProxyLib.MetamethodHookFunc(Tab : {[any] : any}, Specified : {[string] 
 	return Tab;
 end
 
-function ProxyLib.RecursiveMetaDetector(Tab : {[any] : any}) : boolean
-
-	local Meta = ProxyLib.RetrieveMetatable(Tab) or {};
-
-	for _,v in Meta do
-		if typeof(v) ~= "userdata" and typeof(v) ~= "table" then continue end
-		if getmetatable(v) or ProxyLib.RecursiveMetaDetector(v) then
-			return true;
-		end;		
-	end;
-
-	return false;
-end
 
 function ProxyLib.FullLock(Tab : {[any] : any}) : {[any] : any}
 	return ProxyLib.MetamethodHookFunc(Tab, {
