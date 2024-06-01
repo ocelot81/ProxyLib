@@ -20,6 +20,7 @@ function ProxyLib.UnWrap(Obj : Instance)
 	return Obj.UnWrap();
 end
 
+
 function ProxyLib.IsWrapped(Obj : Instance)
 	local Meta = ProxyLib.RetrieveMetatable(Obj);
 
@@ -29,6 +30,7 @@ function ProxyLib.IsWrapped(Obj : Instance)
 
 	return Obj.__wrapped;
 end
+
 
 function ProxyLib.Wrap(Obj : Instance, Properties : {[any] : any}?) : WrappedObj
 	
@@ -116,19 +118,14 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}?) : P
 			end);
 			return OnValueSignal;	
 		end},
-	{__index = NewIndexConnection}), __proxy = Tab;};
-
-
-	return ProxyLib.NewProxy({
+		{__index = NewIndexConnection}), __proxy = Tab;};
+	
+	local ProxyMeta = {
 		__index = function(_, Index)
 			if Closure[Index] then
 				return Closure[Index];
 			end;
 			IndexConnection:Fire(Index);
-
-			if Metadata[Index] then
-				return Metadata[Index];
-			end;
 
 			if Metadata.__index then
 				if typeof(Metadata.__index) == "function" then
@@ -147,14 +144,29 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}?) : P
 				end;
 				return Metadata.__newindex;
 			end;
+
 			Tab[Index] = Val
 		end;
-	});
+		__len = function()
+			return #Tab
+		end,
+	};
+	
+	for Index, Metamethod in Metadata do --// Needed to support operands (__newindex and __index can be set in metadata but its handled internally)
+		if Index == "__index" or Index == "__newindex" then
+			continue;
+		end;
+		ProxyMeta[Index] = Metamethod;
+	end 
+	
+	return ProxyLib.NewProxy(ProxyMeta);
 end
+
 
 function ProxyLib.Proxy() : Proxy
 	return ProxyLib.Proxify({},{})
 end
+
 
 function ProxyLib.DeProxify(Obj : any) : {[any] : any}
 	if typeof(Obj) ~= "userdata" then
@@ -189,6 +201,7 @@ function ProxyLib.Typeof(Tab : {[any] : any}) : any
 
 	return typeof(Tab);
 end
+
 
 function ProxyLib.MetaIndexSearch(Tab : {[any] : any}, Index : any) : any
 	local Meta = ProxyLib.RetrieveMetatable(Tab, true)
@@ -265,7 +278,6 @@ function ProxyLib.RecursiveMetaDetector(Tab : {[any] : any}) : boolean
 	return false;
 end
 
-
 function ProxyLib.FullLock(Tab : {[any] : any}) : {[any] : any}
 	return ProxyLib.MetamethodHookFunc(Tab, {
 		__newindex = function() return end;
@@ -273,7 +285,6 @@ function ProxyLib.FullLock(Tab : {[any] : any}) : {[any] : any}
 		__metatable = "ReadOnly";
 	})
 end
-
 
 function ProxyLib.ForceTypeNewindex(Tab : any, Type : string)
 	return ProxyLib.MetamethodHookFunc(Tab, {
