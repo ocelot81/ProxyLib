@@ -26,5 +26,7 @@ Current API:
 
 
 Use example:
-![image](https://github.com/ocelot81/ProxyLib/assets/128096274/aad846d0-f565-4107-b4bf-31b865237679)
+
+![image](https://github.com/ocelot81/ProxyLib/assets/128096274/9e89aed0-7554-4150-957d-d46ec5cbff52)
+
 
