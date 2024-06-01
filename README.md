@@ -7,7 +7,7 @@ Current API:
 	-- Proxies --
 	ProxyLib.NewProxy(Methods : Table, HookMeta : boolean) -> Returns a plain userdata with supplied metamethods, returns a blank one if HookMeta is false) 
 	ProxyLib.Proxy() -> Blank proxified table (/w Event handling)
-	ProxyLib.Proxify(Tab : Table, Metadata : Table?) -> Proxified table containing Tab
+	ProxyLib.Proxify(Tab : Table, Metadata : Table?) -> Proxified table containing Tab with additional supplied metamethods
 	ProxyLib.Deproxify(Obj : Userdata) -> Original table that was proxified (unless __metatable was filled in)
 	-- Support --
 	ProxyLib.Typeof(Tab : any) -> Returns the __type value or typeof(Tab) if not feasible
