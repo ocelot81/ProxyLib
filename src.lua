@@ -8,7 +8,7 @@ local ProxyLib = {};
 
 type Proxy = {
 	__indexEvent : typeof(Signal) & {OnIndex : (Index : string) -> typeof(Signal)};
-	__newindexEvent : typeof(Signal) & {OnIndex : (Index : string) -> typeof(Signal)};
+	__newindexEvent : typeof(Signal) & {OnIndex : (Index : string) -> typeof(Signal), OnValue : (Value : any) -> typeof(Signal)};
 };
 
 type WrappedObj = {SetInterfaceProperty : (Index : string, Prop : any) -> (), UnWrap : () -> Instance} & Proxy & Instance;
@@ -94,23 +94,32 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}) : Pr
 
 	local Closure = {
 		__indexEvent = setmetatable({OnIndex = function(Expected) 
-			local OnNewIndexSignal = Signal.new();
+			local OnIndexSignal = Signal.new();
 			IndexConnection:Connect(function(Recieved) 
 				if Expected == Recieved then 
-					OnNewIndexSignal:Fire(Recieved);
-				end;
-			end);
-			return OnNewIndexSignal;
-		end},{__index = IndexConnection}), __newindexEvent = setmetatable({OnIndex = function(Expected)
-			local OnIndexSignal = Signal.new();
-			NewIndexConnection:Connect(function(Recieved, Value) 
-				if Expected == Recieved then 
-					OnIndexSignal:Fire(Value);
+					OnIndexSignal:Fire(Recieved);
 				end;
 			end);
 			return OnIndexSignal;
+		end},{__index = IndexConnection}), __newindexEvent = setmetatable({OnIndex = function(Expected)
+			local OnNewIndexSignal = Signal.new();
+			NewIndexConnection:Connect(function(Recieved, Value) 
+				if Expected == Recieved then 
+					OnNewIndexSignal:Fire(Value);
+				end;
+			end);
+			return OnNewIndexSignal;
+		end; OnValue = function(Expected) 
+			local OnValueSignal = Signal.new();
+			NewIndexConnection:Connect(function(Recieved, Value) 
+				if Expected == Value then 
+					OnValueSignal:Fire(Recieved);
+				end;
+			end);
+			return OnValueSignal;	
 		end},
-		{__index = NewIndexConnection}), __proxy = Tab;};
+	{__index = NewIndexConnection}), __proxy = Tab;};
+
 
 	return ProxyLib.NewProxy({
 		__index = function(_, Index)
@@ -149,7 +158,7 @@ function ProxyLib.Proxy() : Proxy
 	return ProxyLib.Proxify({},{})
 end
 
-function ProxyLib.DeProxify(Obj : any) : Proxy
+function ProxyLib.DeProxify(Obj : any) : {[any] : any}
 	if typeof(Obj) ~= "userdata" then
 		return Obj;
 	end;
