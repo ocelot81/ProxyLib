@@ -118,7 +118,7 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}?) : P
 		end},
 	{__index = NewIndexConnection}), __proxy = Tab;};
 	
-	local ExistingMeta = ProxyLib.RetrieveMetatable(Tab);
+	local ExistingMeta = ProxyLib.RetrieveMetatable(Tab, true);
 
 	local ProxyMeta = {
 		__index = function(_, Index)
@@ -129,12 +129,12 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}?) : P
 
 			if Metadata.__index then
 				if typeof(Metadata.__index) == "function" then
-					return Metadata:__index(Index)
+					return Metadata:__index(Index);
 				end;
 				return Metadata.__index;
-			elseif ExistingMeta and ExistingMeta.__index then
+			elseif ExistingMeta.__index then
 				if typeof(ExistingMeta.__index) == "function" then
-					return ExistingMeta:__index(Index)
+					return ExistingMeta:__index(Index);
 				end;
 				return ExistingMeta.__index;
 			end;
@@ -149,26 +149,31 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}?) : P
 					return Metadata:__newindex(Index, Val);
 				end;
 				return Metadata.__newindex;
-			elseif ExistingMeta and ExistingMeta.__newindex then
+			elseif ExistingMeta.__newindex then
 				if typeof(ExistingMeta.__newindex) == "function" then
-					return ExistingMeta:__newindex(Index, Val)
+					return ExistingMeta:__newindex(Index, Val);
 				end;
 				return ExistingMeta.__newindex;
 			end;
 
-			Tab[Index] = Val
+			Tab[Index] = Val;
 		end;
-		__len = function()
-			return #Tab
-		end,
 	};
-
-	for Index, Metamethod in Metadata do --//__newindex and __index can be set in metadata but its handled internally
-		if Index == "__index" or Index == "__newindex" then
+	--// Metamethod overrides
+	
+	for Index, Metamethod in Metadata do
+		if ProxyMeta[Index] then  --//__newindex and __index can be set in metadata but its handled internally
 			continue;
 		end;
 		ProxyMeta[Index] = Metamethod;
-	end 
+	end;
+	
+	for Index, Metamethod in ExistingMeta do
+		if ProxyMeta[Index] then
+			continue;
+		end;
+		ProxyMeta[Index] = Metamethod;
+	end;
 
 	return ProxyLib.NewProxy(ProxyMeta);
 end
@@ -235,6 +240,26 @@ end
 
 --// Metamethods
 
+local RobloxMetamethods = {"__index", "__newindex", "__tostring", "__metatable", "__call", "__mode", "__eq", "__len", "__pow", "__concat", "__unm", "__add", "__sub", "__mul", "__div", "__lt", "__iter", "__idiv", "__type"}; --// technically not __type but its useful
+
+function ProxyLib.FilterMetamethods(Tab : any) : any
+	
+	local Meta = ProxyLib.RetrieveMetatable(Tab);
+
+	if not Meta then
+		return Tab;
+	end;
+	
+	for i,_ in Meta do
+		if table.find(RobloxMetamethods, i) then
+			continue;
+		end;
+		Meta[i] = nil;
+	end
+	
+	return Tab
+end
+
 function ProxyLib.MetamethodHookFunc(Tab : {[any] : any}, Specified : {[string] : () -> ()}) : {[any] : any}
 
 	local Meta = ProxyLib.RetrieveMetatable(Tab, true);
@@ -242,12 +267,10 @@ function ProxyLib.MetamethodHookFunc(Tab : {[any] : any}, Specified : {[string] 
 	if not Meta then 
 		return;
 	end;
-
-	local RobloxMetamethods = {"__index", "__newindex", "__tostring", "__metatable", "__call", "__mode", "__eq", "__len", "__pow", "__concat", "__unm", "__add", "__sub", "__mul", "__div", "__lt", "__iter", "__idiv", "__type"}; --// technically not __type but its useful
-
+	
 	for i,v in Specified do
 		if table.find(RobloxMetamethods, i) then
-			Meta[i] = v;
+			Meta[i] = v;	
 		end;
 	end;
 
@@ -277,7 +300,7 @@ function ProxyLib.ExtractMeta(Tab : any) : {[string] : any}
 	local Meta = ProxyLib.RetrieveMetatable(Tab);
 
 	if not Meta then
-		return {};
+		return setmetatable(Meta, {});
 	end;
 
 	Tab = {};
@@ -298,7 +321,7 @@ function ProxyLib.RetrieveMetatable(Tab : any, Attach : boolean?, __Mt : boolean
 
 	if not Mt and not Attach then
 		return nil;
-	elseif Attach then
+	elseif not Mt and Attach then
 		if typeof(Tab) == "userdata" then
 			return nil
 		end
