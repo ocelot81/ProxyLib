@@ -13,6 +13,7 @@ Current API:
 	ProxyLib.Typeof(Tab : any) -> Returns the __type value or typeof(Tab) if not feasible
 	ProxyLib.FullLock(Tab : Table) -> Returns the table in a version where its read only & secured
 	-- Metamethods
+	ProxyLib.FilterMetamethods(Tab : Table | Userdata) -> Returns a version of Tab where its metatable fields are removed if they arent a valid metamethod (excluding __type)
 	ProxyLib.MetamethodHookFunc(Tab : Table, Methods : Table | Userdata) -> Returns version of the tab where its metamethods are supplied in the Methods argument
 	ProxyLib.ForceTypeNewindex(Tab : Table, Type : any) -> Returns version of Tab where adding new indexes will only work if theyre the supplied type (ie. string, number)
 	ProxyLib.ExtractMeta(Tab : Table | Userdata) -> Returns a new table containing contents of given objects metatable
