@@ -5,20 +5,20 @@
 Current API:
 
 	-- Proxies --
-	ProxyLib.NewProxy(Methods : Table, HookMeta : boolean?) -> Returns a plain userdata with supplied metamethods, returns a blank one if HookMeta is false) 
+	ProxyLib.NewProxy(Methods : Table, HookMeta : boolean?) -> Plain userdata with supplied metamethods, returns a blank one if HookMeta is false
 	ProxyLib.Proxy() -> Blank proxified table (/w Event handling)
 	ProxyLib.Proxify(Tab : Table, Metadata : Table?) -> Proxified table containing Tab with additional supplied metamethods
 	ProxyLib.Deproxify(Obj : Userdata) -> Original table that was proxified (unless __metatable was filled in)
 	-- Support --
-	ProxyLib.Typeof(Tab : any) -> Returns the __type value or typeof(Tab) if not feasible
-	ProxyLib.FullLock(Tab : Table) -> Returns the table in a version where its read only & secured
+	ProxyLib.Typeof(Tab : any) -> The __type value or typeof(Tab) if not feasible
+	ProxyLib.FullLock(Tab : Table) -> Version of Tab where its read only & secured
 	-- Metamethods
-	ProxyLib.FilterMetamethods(Tab : Table | Userdata) -> Returns a version of Tab where its metatable fields are removed if they arent a valid metamethod (excluding __type)
-	ProxyLib.MetamethodHookFunc(Tab : Table | Userdata, Methods : Table | Userdata) -> Returns version of the tab where its metamethods are supplied in the Methods argument
-	ProxyLib.ForceTypeNewindex(Tab : Table, Type : any) -> Returns version of Tab where adding new indexes will only work if theyre the supplied type (ie. string, number)
-	ProxyLib.ExtractMeta(Tab : Table | Userdata) -> Returns a new table containing contents of given objects metatable
+	ProxyLib.FilterMetamethods(Tab : Table | Userdata) -> Version of Tab where its metatable fields are removed if they arent a valid metamethod (excluding __type)
+	ProxyLib.MetamethodHookFunc(Tab : Table | Userdata, Methods : Table | Userdata) -> Version of Tab where its metamethods are supplied in the Methods argument
+	ProxyLib.ForceTypeNewindex(Tab : Table, Type : any) -> Version of Tab where adding new indexes will only work if theyre the supplied type (ie. string, number)
+	ProxyLib.ExtractMeta(Tab : Table | Userdata) -> New table containing contents of given objects metatable
 	ProxyLib.RetrieveMetatable(Obj : any, Attach : boolean?, __mt : boolean?) -> Returns given object's metatable, conditionally attaching it (arg 2) or conditionally returning __metatable field (arg 3)
-	ProxyLib.MetaIndexSearch(Tab : Table | Userdata, Index : any) -> Returns the value of the metatable field in given Tab
+	ProxyLib.MetaIndexSearch(Tab : Table | Userdata, Index : any) -> Value of Tab's specified metatable field
 	-- Wrapping --
 	Proxylib.Wrap(Obj : Instance, Properties : Table?) -> Userdata wrapping the object and containing properties
 	Proxylib.UnWrap(Obj : Userdata) -> Instance wrapped by the userdata
