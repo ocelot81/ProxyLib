@@ -6,12 +6,12 @@ local Signal = require(ReplicatedStorage.Signal);
 
 local ProxyLib = {};
 
-type Proxy = {
+export type Proxy = {
 	__indexEvent : typeof(Signal) & {OnIndex : (Index : string) -> typeof(Signal)};
 	__newindexEvent : typeof(Signal) & {OnIndex : (Index : string) -> typeof(Signal), OnValue : (Value : any) -> typeof(Signal)};
 };
 
-type WrappedObj = {SetInterfaceProperty : (Index : string, Property : any) -> (), UnWrap : () -> Instance} & Proxy & Instance;
+export type WrappedObj = {SetInterfaceProperty : (Index : string, Property : any) -> (), UnWrap : () -> Instance} & Proxy & Instance;
 
 --// Wrapping
 
@@ -183,6 +183,17 @@ function ProxyLib.Proxy() : Proxy
 	return ProxyLib.Proxify({},{})
 end
 
+function ProxyLib.rawlen(Tab : any) : number
+	return rawlen(Tab.__proxy)
+end
+
+function ProxyLib.rawget(Tab : any, Index : any) : any
+	return rawget(Tab.__proxy, Index)
+end
+
+function ProxyLib.rawset(Tab : any, Index : any, Value : any) : any
+	return rawset(Tab.__proxy, Index, Value)
+end
 
 function ProxyLib.DeProxify(Obj : any) : {[any] : any}
 	if typeof(Obj) ~= "userdata" then
@@ -317,20 +328,20 @@ function ProxyLib.RetrieveMetatable(Tab : any, Attach : boolean?, __Mt : boolean
 		return nil;
 	end
 
-	local Mt = getmetatable(Tab)
+	local Mt = getmetatable(Tab);
 
 	if not Mt and not Attach then
 		return nil;
 	elseif not Mt and Attach then
 		if typeof(Tab) == "userdata" then
-			return nil
-		end
+			return nil;
+		end;
 		Mt = getmetatable(setmetatable(Tab, {}))
 	elseif typeof(Mt) == "string" then
 		if __Mt then
-			return Mt
-		end
-		return nil
+			return Mt;
+		end;
+		return nil;
 	end;
 
 	return Mt;
