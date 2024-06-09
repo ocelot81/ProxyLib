@@ -9,6 +9,7 @@ Current API:
 	ProxyLib.Proxy() -> Blank proxified table (/w Event handling)
 	ProxyLib.Proxify(Tab : Table, Metadata : Table?) -> Proxified table containing Tab with additional supplied metamethods
 	ProxyLib.Deproxify(Obj : Userdata) -> Original table that was proxified (unless __metatable was filled in)
+ 	ProxyLib.rawset / .rawget / .rawlen -> raw-funcs for proxied tables
 	-- Support --
 	ProxyLib.Typeof(Tab : any) -> The __type value or typeof(Tab) if not feasible
 	ProxyLib.FullLock(Tab : Table) -> Version of Tab where its read only & secured
