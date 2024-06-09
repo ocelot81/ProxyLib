@@ -117,7 +117,7 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}?) : P
 			end);
 			return OnValueSignal;	
 		end},
-	{__index = NewIndexConnection}), DisconnectEventHandler = function(self)
+	{__index = NewIndexConnection}), __DisconnectEventHandler = function(self)
 		setmetatable(self.__indexEvent, nil);
 		self.__indexEvent = nil;  
 		setmetatable(self.__newindexEvent, nil);
