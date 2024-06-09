@@ -2,13 +2,14 @@
 --// ProxyLib
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage");
-local Signal = require(ReplicatedStorage.Signal);
+local Signal = require(ReplicatedStorage.Modules.MockSignal);
 
 local ProxyLib = {};
 
 export type Proxy = {
 	__indexEvent : typeof(Signal) & {OnIndex : (Index : string) -> typeof(Signal)};
 	__newindexEvent : typeof(Signal) & {OnIndex : (Index : string) -> typeof(Signal), OnValue : (Value : any) -> typeof(Signal)};
+	__DisconnectEventHandler : (self : Proxy) -> ();
 };
 
 export type WrappedObj = {SetInterfaceProperty : (Index : string, Property : any) -> (), UnWrap : () -> Instance} & Proxy & Instance;
@@ -116,8 +117,13 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}?) : P
 			end);
 			return OnValueSignal;	
 		end},
-	{__index = NewIndexConnection}), __proxy = Tab;};
-	
+	{__index = NewIndexConnection}), DisconnectEventHandler = function(self)
+		setmetatable(self.__indexEvent, nil);
+		self.__indexEvent = nil;  
+		setmetatable(self.__newindexEvent, nil);
+		self.__newindexEvent = nil;  
+	end; __proxy = Tab;};
+
 	local ExistingMeta = ProxyLib.RetrieveMetatable(Tab, true);
 
 	local ProxyMeta = {
@@ -138,7 +144,7 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}?) : P
 				end;
 				return ExistingMeta.__index;
 			end;
-			
+
 			return Tab[Index];
 		end;
 		__newindex = function(_, Index, Val)
@@ -160,14 +166,14 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}?) : P
 		end;
 	};
 	--// Metamethod overrides
-	
+
 	for Index, Metamethod in Metadata do
 		if ProxyMeta[Index] then  --//__newindex and __index can be set in metadata but its handled internally
 			continue;
 		end;
 		ProxyMeta[Index] = Metamethod;
 	end;
-	
+
 	for Index, Metamethod in ExistingMeta do
 		if ProxyMeta[Index] then
 			continue;
@@ -254,20 +260,20 @@ end
 local RobloxMetamethods = {"__index", "__newindex", "__tostring", "__metatable", "__call", "__mode", "__eq", "__len", "__pow", "__concat", "__unm", "__add", "__sub", "__mul", "__div", "__lt", "__iter", "__idiv", "__type"}; --// technically not __type but its useful
 
 function ProxyLib.FilterMetamethods(Tab : any) : any
-	
+
 	local Meta = ProxyLib.RetrieveMetatable(Tab);
 
 	if not Meta then
 		return Tab;
 	end;
-	
+
 	for i,_ in Meta do
 		if table.find(RobloxMetamethods, i) then
 			continue;
 		end;
 		Meta[i] = nil;
 	end
-	
+
 	return Tab
 end
 
@@ -278,7 +284,7 @@ function ProxyLib.MetamethodHookFunc(Tab : {[any] : any}, Specified : {[string] 
 	if not Meta then 
 		return;
 	end;
-	
+
 	for i,v in Specified do
 		if table.find(RobloxMetamethods, i) then
 			Meta[i] = v;	
