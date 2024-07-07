@@ -2,7 +2,7 @@
 --// ProxyLib
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage");
-local Signal = require(ReplicatedStorage.Modules.MockSignal);
+local Signal = require(ReplicatedStorage.Signal);
 
 local ProxyLib = {};
 
@@ -117,18 +117,21 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}?) : P
 			end);
 			return OnValueSignal;	
 		end},
-	{__index = NewIndexConnection}), __DisconnectEventHandler = function(self)
-		setmetatable(self.__indexEvent, nil);
-		self.__indexEvent = nil;  
-		setmetatable(self.__newindexEvent, nil);
-		self.__newindexEvent = nil;  
-	end; __proxy = Tab;};
+		{__index = NewIndexConnection}), __DisconnectEventHandler = function(self)
+			setmetatable(self.__indexEvent, nil);
+			self.__indexEvent = nil;  
+			setmetatable(self.__newindexEvent, nil);
+			self.__newindexEvent = nil;  
+		end; __proxy = Tab;};
 
 	local ExistingMeta = ProxyLib.RetrieveMetatable(Tab, true);
 
 	local ProxyMeta = {
-		__index = function(_, Index)
-			if Closure[Index] then
+		__index = function(self, Index)
+			if Closure[Index] then			
+				if not ProxyLib.RetrieveMetatable(self) and Index == "__proxy" then
+					return error("Attempt to retrieve a protected table");
+				end;
 				return Closure[Index];
 			end;
 			IndexConnection:Fire(Index);
