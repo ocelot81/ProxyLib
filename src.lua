@@ -2,7 +2,7 @@
 --// ProxyLib
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage");
-local Signal = require(ReplicatedStorage.Signal);
+local Signal = require(ReplicatedStorage.Signal); --// Signal module path here
 
 local ProxyLib = {};
 
