@@ -9,7 +9,7 @@ local ProxyLib = {};
 export type Proxy = {
 	__indexEvent : typeof(Signal) & {OnIndex : (Index : string) -> typeof(Signal)};
 	__newindexEvent : typeof(Signal) & {OnIndex : (Index : string) -> typeof(Signal), OnValue : (Value : any) -> typeof(Signal)};
-	__DisconnectEventHandler : (self : Proxy) -> ();
+	__DisconnectEventConnections : () -> ();
 };
 
 export type WrappedObj = {SetInterfaceProperty : (Index : string, Property : any) -> (), UnWrap : () -> Instance} & Proxy & Instance;
@@ -87,7 +87,7 @@ end
 function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}?) : Proxy
 
 	Metadata = Metadata or {};
-
+	
 	local NewIndexConnection = Signal.new();
 	local IndexConnection = Signal.new();
 
@@ -117,11 +117,9 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}?) : P
 			end);
 			return OnValueSignal;	
 		end},
-		{__index = NewIndexConnection}), __DisconnectEventHandler = function(self)
-			setmetatable(self.__indexEvent, nil);
-			self.__indexEvent = nil;  
-			setmetatable(self.__newindexEvent, nil);
-			self.__newindexEvent = nil;  
+		{__index = NewIndexConnection}), __DisconnectEventConnections = function(self)
+			NewIndexConnection:DisconnectAll();
+			IndexConnection:DisconnectAll();
 		end; __proxy = Tab;};
 
 	local ExistingMeta = ProxyLib.RetrieveMetatable(Tab, true);
