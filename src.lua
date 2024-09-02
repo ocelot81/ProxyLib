@@ -9,7 +9,7 @@ local ProxyLib = {};
 export type Proxy = {
 	__indexEvent : typeof(Signal) & {OnIndex : (Index : string) -> typeof(Signal)};
 	__newindexEvent : typeof(Signal) & {OnIndex : (Index : string) -> typeof(Signal), OnValue : (Value : any) -> typeof(Signal)};
-	__DisconnectEventConnections : () -> ();
+	__DisconnectEventHandler : (self : Proxy) -> ();
 };
 
 export type WrappedObj = {SetInterfaceProperty : (Index : string, Property : any) -> (), UnWrap : () -> Instance} & Proxy & Instance;
@@ -117,7 +117,7 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}?) : P
 			end);
 			return OnValueSignal;	
 		end},
-		{__index = NewIndexConnection}), __DisconnectEventConnections = function(self)
+		{__index = NewIndexConnection}), __DisconnectEventConnections = function()
 			NewIndexConnection:DisconnectAll();
 			IndexConnection:DisconnectAll();
 		end; __proxy = Tab;};
@@ -150,7 +150,7 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}?) : P
 		end;
 		__newindex = function(_, Index, Val)
 			NewIndexConnection:Fire(Index, Val);
-
+		
 			if Metadata.__newindex then
 				if typeof(Metadata.__newindex) == "function" then
 					return Metadata:__newindex(Index, Val);
@@ -186,6 +186,32 @@ function ProxyLib.Proxify(Tab : {[any] : any}, Metadata : {[string] : any}?) : P
 end
 
 
+function ProxyLib.ReadOnly(Tab : {[any] : any}) : any
+	return ProxyLib.NewProxy({
+		__index = function(self, Index)
+
+			if rawget(Tab, Index) and typeof(rawget(Tab, Index)) == "table" then
+				local Buffered = {};
+
+				for i,v in Tab[Index] do
+					Buffered[i] = v;
+				end;
+
+				return ProxyLib.FullLock(Buffered)
+			end
+
+			return rawget(Tab, Index);
+		end;
+
+		__newindex = function()
+			error("Attempt to write a Read-Only table");
+		end;
+
+		__metatable = "ReadOnlyTable"
+	});
+end;
+
+
 function ProxyLib.Proxy() : Proxy
 	return ProxyLib.Proxify({},{})
 end
@@ -214,13 +240,18 @@ function ProxyLib.DeProxify(Obj : any) : {[any] : any}
 	return Obj.__proxy
 end
 
-function ProxyLib.ProxyFunc(func : () -> ()) : any
+function ProxyLib.ProxyFunc(func : () -> (), mt : string?, NoPcall : boolean?) : any
 	return ProxyLib.NewProxy({
-		__call = func;
+		__call = function(_, ...)
+			return func(...)
+		end;
+		
+		__metatable = mt
 	});
 end
 
 --// Support Functions
+
 
 function ProxyLib.Typeof(Tab : {[any] : any}) : any
 	local Type = ProxyLib.MetaIndexSearch(Tab, "__type");
